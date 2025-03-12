@@ -1,7 +1,36 @@
 services:
+  file-processor:
+    container_name: file-processor
+    build:
+      context: ./microservices/file_processor
+    depends_on:
+      - minio
+      - kafka
+    ports:
+      - "8000:8000"
+    environment:
+      - STORAGE_HOST=minio
+      - STORAGE_PORT=9000
+      - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER}
+      - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - STORAGE_BUCKET_NAME=uploads
+
   kafka:
     image: apache/kafka:latest
-    container_name: file-processor
+    container_name: processor-stream
     ports:
       - "9092:9092"
       - "9093:9093"
+
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/minio/data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:?Root user name is required for minio}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:?Root password is required for minio}
+    ports:
+      - "9010:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
