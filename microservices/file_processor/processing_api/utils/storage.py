@@ -51,40 +51,13 @@ class StorageService:
                     status_code=500, detail=f"Storage configuration error: {str(e)}"
                 )
 
-    def create_tarball(self, files_data):
-        tar_buffer = io.BytesIO()
-
-        with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
-            for filename, content in files_data:
-                with tempfile.NamedTemporaryFile(delete=False) as temp:
-                    temp.write(content)
-                    temp_name = temp.name
-
-                try:
-                    tar.add(temp_name, arcname=filename)
-                finally:
-                    os.unlink(temp_name)
-
-        tar_buffer.seek(0)
-        return tar_buffer.read()
-
-    def upload_tarball(self, tarball_content, original_filenames):
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_filename = f"upload_{timestamp}_{uuid.uuid4().hex}.tar.gz"
-
+    def upload_file(self, file_content: str, file_path: str):
         try:
             self.__client.put_object(
                 Bucket=self.config.bucket_name,
-                Key=unique_filename,
-                Body=tarball_content,
-                ContentType="application/gzip",
+                Key=file_path,
+                Body=file_content,
             )
-
-            return {
-                "tarball_filename": unique_filename,
-                "file_count": len(original_filenames),
-                "tarball_size": len(tarball_content),
-            }
         except Exception as e:
             raise HTTPException(
                 status_code=500, detail=f"Failed to upload tarball: {str(e)}"

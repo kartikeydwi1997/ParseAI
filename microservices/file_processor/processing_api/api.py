@@ -1,8 +1,9 @@
 from fastapi import FastAPI, UploadFile, File, Depends, HTTPException
-from typing import List
 import os
+import uuid
 
 from processing_api.utils.storage import StorageConfig, StorageService
+from processing_api.utils.archive_extractor import ArchiveExtractor
 
 
 app = FastAPI()
@@ -23,44 +24,40 @@ def get_storage_service():
 
 @app.post("/upload/", response_model=dict)
 async def upload_files(
-    files: List[UploadFile] = File(...),
+    file: UploadFile = File(...),
     storage: StorageService = Depends(get_storage_service),
 ):
-    """
-    Upload multiple files to MinIO/S3 (maximum 50 files)
-
-    Returns a list of metadata for each uploaded file
-    """
-    # Check number of files
-    if len(files) > 50:
+    file_ext = file.filename.split(".")[-1]
+    if file_ext not in ["zip", "gz", "tar"]:
         raise HTTPException(
-            status_code=400, detail="Maximum 50 files allowed per upload"
+            status_code=400, detail="Only a single zip/gz/tar.gz allowed!"
         )
 
-    if len(files) == 0:
-        raise HTTPException(status_code=400, detail="No files provided")
+    project_id = str(uuid.uuid4())
 
-    files_data = []
-    original_filenames = []
+    extractor = ArchiveExtractor(
+        file_name=file.filename, file_contents=await file.read(), project_id=project_id
+    )
+    extractor.extract_and_get_tree()
 
-    for file in files:
-        # Read file content
-        file_content = await file.read()
-        files_data.append((file.filename, file_content))
-        original_filenames.append(file.filename)
+    for dirpath, _, filenames in os.walk(project_id):
+        for filename in filenames:
+            full_path = os.path.join(dirpath, filename)
+            try:
+                with open(full_path, "r") as f:
+                    storage.upload_file(file_content=f.read(), file_path=full_path)
+            except:
+                pass
 
-    # Create tarball from all files
-    try:
-        tarball_content = storage.create_tarball(files_data)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to create tarball: {str(e)}"
-        )
+    extractor.cleanup()
 
-    # Upload the tarball
-    result = storage.upload_tarball(tarball_content, original_filenames)
+    return {"projectId": project_id}
 
-    return result
+
+@app.get("/project-status/{project_id}")
+def get_project_status(project_id: str):
+    # Check mongoDB and return status if project is ready to be queried
+    pass
 
 
 @app.get("/health")
