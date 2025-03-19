@@ -4,6 +4,7 @@ import uuid
 
 from processing_api.utils.storage import StorageConfig, StorageService
 from processing_api.utils.archive_extractor import ArchiveExtractor
+from processing_api.utils.producer import FileProducer
 
 
 app = FastAPI()
@@ -40,12 +41,20 @@ async def upload_files(
     )
     extractor.extract_and_get_tree()
 
+    file_producer = FileProducer()
+
     for dirpath, _, filenames in os.walk(project_id):
         for filename in filenames:
             full_path = os.path.join(dirpath, filename)
             try:
                 with open(full_path, "r") as f:
                     storage.upload_file(file_content=f.read(), file_path=full_path)
+                if not file_producer.send_message(
+                    project_id=project_id, file_key=full_path
+                ):
+                    raise HTTPException(
+                        status_code=500, detail="Failed to dump file tree into producer"
+                    )
             except:
                 pass
 
