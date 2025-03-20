@@ -1,7 +1,6 @@
 from kafka import KafkaProducer
 from kafka.producer.future import FutureRecordMetadata
 import os
-import json
 from pydantic import BaseModel
 
 from processing_api.utils.singleton import singleton

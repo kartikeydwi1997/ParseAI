@@ -28,6 +28,9 @@ services:
       - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER}
       - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - STORAGE_BUCKET_NAME=uploads
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=file_messages
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest

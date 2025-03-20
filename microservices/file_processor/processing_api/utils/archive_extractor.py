@@ -1,7 +1,6 @@
 import os
 import zipfile
 import tarfile
-import uuid
 import shutil
 
 

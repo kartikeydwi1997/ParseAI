@@ -1,13 +1,7 @@
 from pydantic import BaseModel
 import boto3
 from botocore.exceptions import ClientError
-from datetime import datetime
-import uuid
-import os
 from fastapi import HTTPException
-import io
-import tempfile
-import tarfile
 
 
 class StorageConfig(BaseModel):
