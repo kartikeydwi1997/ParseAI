@@ -15,6 +15,7 @@ const ToursPage = () => {
     <>
       <form className='max-w-lg mb-12'>
         <div className='join w-full'>
+        
           <input
             type='text'
             placeholder='enter city or country here...'
@@ -38,7 +39,9 @@ const ToursPage = () => {
       ) : (
         <ToursList data={data} />
       )}
+  
     </>
+
   );
 };
 export default ToursPage;

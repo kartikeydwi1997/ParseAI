@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
+console.log('API KEY:', process.env.OPENAI_API_KEY);
 export const generateChatResponse = async (chatMessages) => {
   try {
     const response = await openai.chat.completions.create({
@@ -177,4 +177,28 @@ export const subtractTokens = async (clerkId, tokens) => {
   revalidatePath('/profile');
   // Return the new token value
   return result.tokens;
+};
+
+export const uploadProject = async (formData) => {
+  try {
+    const response = await fetch('http://localhost:8000/upload/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        // Don't set Content-Type header when sending FormData
+        // It will be automatically set with the correct boundary
+        'Accept': 'application/json',
+      },
+    });
+    
+    const data = await response.json();
+    console.log(data);
+    if (!response.ok) {
+      throw new Error(data.message);
+    }
+    
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 };
