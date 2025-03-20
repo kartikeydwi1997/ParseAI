@@ -5,6 +5,7 @@ import uuid
 from processing_api.utils.storage import StorageConfig, StorageService
 from processing_api.utils.archive_extractor import ArchiveExtractor
 from processing_api.utils.producer import FileProducer
+from processing_api.utils.mongo_store import MongoDBClient, MongoCollections
 
 
 app = FastAPI()
@@ -60,13 +61,27 @@ async def upload_files(
 
     extractor.cleanup()
 
+    mongo_client = MongoDBClient()
+    mongo_client.put(
+        collection_name=MongoCollections.FileProcessing.value,
+        document={
+            "projectId": project_id,
+            "docstringGeneration": False,
+            "libraryDocGeneration": False,
+            "rawCodeExtraction": False,
+        },
+    )
+
     return {"projectId": project_id}
 
 
 @app.get("/project-status/{project_id}")
 def get_project_status(project_id: str):
-    # Check mongoDB and return status if project is ready to be queried
-    pass
+    mongo_client = MongoDBClient()
+    return mongo_client.get_by_id(
+        collection_name=MongoCollections.FileProcessing.value,
+        condition={"projectId": str(project_id)},
+    )
 
 
 @app.get("/health")
