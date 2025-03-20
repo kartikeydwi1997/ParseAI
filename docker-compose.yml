@@ -1,4 +1,18 @@
+version: "3.8"
 services:
+  postgres:
+    image: postgres:latest
+    container_name: my_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   file-processor:
     container_name: file-processor
     build:
@@ -51,3 +65,6 @@ services:
       - "9010:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
+
+volumes:
+  postgres_data:
