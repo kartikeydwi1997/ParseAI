@@ -37,6 +37,7 @@ const UploadForm = () => {
       return result.data;
     },
     onSuccess: (data) => {
+      console.log('Project uploaded:', data); 
       toast.success('Project uploaded successfully');
       setFile(null);
       // Reset the file input
@@ -64,11 +65,11 @@ const UploadForm = () => {
   
     const formData = new FormData();
     // FastAPI expects 'files' as the field name
-    formData.append('files', file);
+    formData.append('file', file);
     
     mutate(formData);
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className='space-y-4'>
       <fieldset className='fieldset border rounded-lg p-4'>

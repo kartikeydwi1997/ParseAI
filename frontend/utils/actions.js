@@ -180,25 +180,35 @@ export const subtractTokens = async (clerkId, tokens) => {
 };
 
 export const uploadProject = async (formData) => {
+  console.log('Uploading project...');
+  console.log('Form data:', formData);
   try {
     const response = await fetch('http://localhost:8000/upload/', {
       method: 'POST',
       body: formData,
       headers: {
-        // Don't set Content-Type header when sending FormData
-        // It will be automatically set with the correct boundary
         'Accept': 'application/json',
       },
     });
     
     const data = await response.json();
-    console.log(data);
+    console.log('Upload response:', data);
     if (!response.ok) {
-      throw new Error(data.message);
+      throw new Error(data.detail || 'Upload failed');
     }
     
-    return { success: true, data };
+    // FastAPI returns { projectId: string }
+    return { 
+      success: true, 
+      data: {
+        projectId: data.projectId
+      }
+    };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Upload error:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to upload project'
+    };
   }
 };
