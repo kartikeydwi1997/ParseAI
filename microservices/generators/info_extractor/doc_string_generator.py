@@ -173,12 +173,11 @@ def doc_string_generator():
         key_deserializer=lambda x: x.decode("utf-8") if x else None,
     )
 
-    logging.info("Consumer 1 started. Waiting for messages...")
+    logging.info("Doc string generation consumer started. Waiting for messages...")
 
     storage = get_storage_service()
     mongo_client = MongoDBClient()
 
-    # Process messages
     for message in consumer:
         message_data = message.value
         project_id = message_data.id
