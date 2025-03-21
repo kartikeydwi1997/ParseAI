@@ -102,10 +102,26 @@ async def upload_files(
 @app.get("/project-status/{project_id}")
 def get_project_status(project_id: str):
     mongo_client = MongoDBClient()
-    return mongo_client.get_by_id(
+    result = mongo_client.get_by_id(
         collection_name=MongoCollections.FileProcessing.value,
         condition={"projectId": str(project_id)},
     )
+
+    overall_result = "IN_PROGRESS"
+    completed_count = 0
+    for file_info in result.get("fileProcessingStatus", {}).values():
+        if (
+            file_info.get("fileKey", "") != ""
+            and file_info.get("docstringGeneration", "") != ""
+            and file_info.get("libraryDocGeneration", "") != ""
+            and file_info.get("rawCodeExtraction", "") != ""
+        ):
+            completed_count += 1
+
+    if completed_count == len(result.get("fileProcessingStatus", {})):
+        overall_result = "COMPLETE"
+
+    return {"individualStatus": result, "overallResult": overall_result}
 
 
 @app.get("/health")
