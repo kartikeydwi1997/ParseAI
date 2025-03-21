@@ -13,6 +13,7 @@ def value_serializer_fn(v: BaseModel):
 class FileMessage(BaseModel):
     id: str
     file_key: str
+    hash: str
 
 
 @singleton
@@ -34,12 +35,12 @@ class FileProducer:
         )
         self.__topic = kafka_topic
 
-    def send_message(self, project_id: str, file_key: str) -> bool:
+    def send_message(self, message: FileMessage) -> bool:
         try:
             future: FutureRecordMetadata = self.__producer.send(
                 self.__topic,
-                key=project_id,
-                value=FileMessage(id=project_id, file_key=file_key),
+                key=message.id,
+                value=message,
             )
             future.get(timeout=self.SEND_MESSAGE_TIMEOUT)
             return True
