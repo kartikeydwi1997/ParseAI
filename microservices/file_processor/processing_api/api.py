@@ -44,6 +44,7 @@ async def upload_files(
 
     file_producer = FileProducer()
 
+    file_processing_status = []
     for dirpath, _, filenames in os.walk(project_id):
         for filename in filenames:
             full_path = os.path.join(dirpath, filename)
@@ -56,6 +57,15 @@ async def upload_files(
                     raise HTTPException(
                         status_code=500, detail="Failed to dump file tree into producer"
                     )
+
+                file_processing_status.append(
+                    {
+                        "fullPath": full_path,
+                        "docstringGeneration": False,
+                        "libraryDocGeneration": False,
+                        "rawCodeExtraction": False,
+                    }
+                )
             except:
                 pass
 
@@ -66,9 +76,7 @@ async def upload_files(
         collection_name=MongoCollections.FileProcessing.value,
         document={
             "projectId": project_id,
-            "docstringGeneration": False,
-            "libraryDocGeneration": False,
-            "rawCodeExtraction": False,
+            "fileProcessingStatus": file_processing_status,
         },
     )
 
