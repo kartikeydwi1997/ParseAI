@@ -14,6 +14,7 @@ from info_extractor.utils.environment import (
 from info_extractor.utils.environment import get_env
 from info_extractor.utils.storage import StorageConfig, StorageService
 from info_extractor.utils.mongo_store import MongoDBClient, MongoCollections
+from info_extractor.utils.consumer_processing import post_consumption_processing
 
 # Set up logging
 logging.basicConfig(
@@ -132,4 +133,8 @@ def raw_code_extractor():
                 condition={
                     "projectId": project_id,
                 },
+            )
+
+            post_consumption_processing(
+                project_id=project_id, mongo_client=mongo_client
             )

@@ -15,6 +15,7 @@ from info_extractor.utils.environment import (
 from info_extractor.utils.storage import StorageService, StorageConfig
 from info_extractor.utils.environment import get_env
 from info_extractor.utils.mongo_store import MongoDBClient, MongoCollections
+from info_extractor.utils.consumer_processing import post_consumption_processing
 
 
 logging.basicConfig(
@@ -222,4 +223,8 @@ def doc_string_generator():
                 condition={
                     "projectId": project_id,
                 },
+            )
+
+            post_consumption_processing(
+                project_id=project_id, mongo_client=mongo_client
             )

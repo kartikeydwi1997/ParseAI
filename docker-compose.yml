@@ -40,6 +40,8 @@ services:
         condition: service_started
       mongodb:
         condition: service_started
+      rabbitmq:
+        condition: service_started
     environment:
       - KAFKA_HOST=kafka
       - KAFKA_PORT=29092
@@ -52,6 +54,9 @@ services:
       - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER}
       - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - STORAGE_BUCKET_NAME=uploads
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_QUEUE=prompt-generation
     restart: on-failure
 
   library_doc_generator:
@@ -67,11 +72,23 @@ services:
         condition: service_started
       mongodb:
         condition: service_started
+      rabbitmq:
+        condition: service_started
     environment:
       - KAFKA_HOST=kafka
       - KAFKA_PORT=29092
       - KAFKA_TOPIC=file_messages
       - KAFKA_CONSUMER_GROUP=file-processor-2
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - STORAGE_HOST=minio
+      - STORAGE_PORT=9000
+      - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER}
+      - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - STORAGE_BUCKET_NAME=uploads
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_QUEUE=prompt-generation
     restart: on-failure
 
   doc_string_generator:
@@ -87,6 +104,8 @@ services:
         condition: service_started
       mongodb:
         condition: service_started
+      rabbitmq:
+        condition: service_started
     environment:
       - KAFKA_HOST=kafka
       - KAFKA_PORT=29092
@@ -99,6 +118,9 @@ services:
       - STORAGE_ACCESS_KEY=${MINIO_ROOT_USER}
       - STORAGE_SECRET_KEY=${MINIO_ROOT_PASSWORD}
       - STORAGE_BUCKET_NAME=uploads
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=5672
+      - RABBIT_QUEUE=prompt-generation
     restart: on-failure
 
   ##########################################################
@@ -177,6 +199,13 @@ services:
     ports:
       - "27017:27017"
     restart: on-failure
+
+  rabbitmq:
+    container_name: prompt-generator-queue
+    image: rabbitmq:3.13-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
 
 volumes:
   postgres_data:

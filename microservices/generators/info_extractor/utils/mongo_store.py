@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from enum import Enum
 
 from info_extractor.utils.singleton import singleton
@@ -40,3 +40,14 @@ class MongoDBClient:
         collection = self.db[collection_name]
         result = collection.update_one(filter=condition, update=document)
         return result.modified_count
+
+    def get_by_id(
+        self, collection_name: str, condition: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        try:
+            collection = self.db[collection_name]
+            document = collection.find_one(condition, {"_id": 0})
+            return document
+        except Exception as e:
+            print(f"Error retrieving document: {e}")
+            return None
