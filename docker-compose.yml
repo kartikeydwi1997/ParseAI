@@ -11,6 +11,7 @@ services:
     depends_on:
       - minio
       - kafka
+      - mongodb
     ports:
       - "8000:8000"
     environment:
@@ -24,6 +25,67 @@ services:
       - KAFKA_TOPIC=file_messages
       - MONGO_HOST=mongodb
       - MONGO_PORT=27017
+    restart: on-failure
+
+  raw_code_extractor:
+    container_name: raw-code-extractor-consumer
+    build:
+      context: ./microservices/generators
+      args:
+        - RUN_ARG=raw-code
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mongodb:
+        condition: service_started
+    environment:
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=file_messages
+      - KAFKA_CONSUMER_GROUP=file-processor-1
+    restart: on-failure
+
+  library_doc_generator:
+    container_name: library-doc-generator-consumer
+    build:
+      context: ./microservices/generators
+      args:
+        - RUN_ARG=library-doc-string
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mongodb:
+        condition: service_started
+    environment:
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=file_messages
+      - KAFKA_CONSUMER_GROUP=file-processor-2
+    restart: on-failure
+
+  doc_string_generator:
+    container_name: doc-string-generator-consumer
+    build:
+      context: ./microservices/generators
+      args:
+        - RUN_ARG=doc-string
+    depends_on:
+      kafka:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      mongodb:
+        condition: service_started
+    environment:
+      - KAFKA_HOST=kafka
+      - KAFKA_PORT=29092
+      - KAFKA_TOPIC=file_messages
+      - KAFKA_CONSUMER_GROUP=file-processor-3
+    restart: on-failure
 
   ##########################################################
   ##### SUPPORTING SERVICES
@@ -33,7 +95,6 @@ services:
   postgres:
     image: postgres:latest
     container_name: my_postgres
-    restart: always
     environment:
       POSTGRES_USER: myuser
       POSTGRES_PASSWORD: mypassword
@@ -42,6 +103,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: on-failure
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -51,12 +113,19 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
+    healthcheck:
+      test: [ "CMD-SHELL", "echo srvr | nc localhost 2181 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: on-failure
 
   kafka:
     image: confluentinc/cp-kafka:latest
     container_name: kafka
     depends_on:
-      - zookeeper
+      zookeeper:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
@@ -66,6 +135,13 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-topics --bootstrap-server localhost:29092 --list" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
 
   minio:
     container_name: minio
@@ -79,12 +155,14 @@ services:
       - "9010:9000"
       - "9001:9001"
     command: server /data --console-address ":9001"
+    restart: on-failure
 
   mongodb:
     container_name: mongo-store
     image: mongo:bionic
     ports:
       - "27017:27017"
+    restart: on-failure
 
 volumes:
   postgres_data:
