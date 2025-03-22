@@ -108,6 +108,9 @@ def get_project_status(project_id: str):
         condition={"projectId": str(project_id)},
     )
 
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"No project by id: '{project_id}'")
+
     overall_result = "IN_PROGRESS"
     completed_count = 0
     for file_info in result.get("fileProcessingStatus", {}).values():
