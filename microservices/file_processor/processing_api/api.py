@@ -83,6 +83,7 @@ async def upload_files(
         document={
             "projectId": project_id,
             "fileProcessingStatus": file_processing_status,
+            "vectorized": False,
         },
     )
 
@@ -110,12 +111,7 @@ def get_project_status(project_id: str):
     overall_result = "IN_PROGRESS"
     completed_count = 0
     for file_info in result.get("fileProcessingStatus", {}).values():
-        if (
-            file_info.get("fileKey", "") != ""
-            and file_info.get("docstringGeneration", "") != ""
-            and file_info.get("libraryDocGeneration", "") != ""
-            and file_info.get("rawCodeExtraction", "") != ""
-        ):
+        if all([val != "" for val in file_info.values()]):
             completed_count += 1
 
     if completed_count == len(result.get("fileProcessingStatus", {})):
