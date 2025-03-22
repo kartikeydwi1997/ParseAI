@@ -14,6 +14,11 @@ from file_vectorizer.utils.storage import StorageConfig, StorageService
 from file_vectorizer.utils.mongo_store import MongoCollections, MongoDBClient
 from file_vectorizer.utils.model import QueueMessage, FileProcessingStatus
 from file_vectorizer.utils.llm import GeminiAPIDao
+from file_vectorizer.utils.milvus_store import (
+    MilvusDBClient,
+    CodeVectorDocument,
+    VectorType,
+)
 
 
 logging.basicConfig(
@@ -43,6 +48,7 @@ class ProjectVectorizingConsumer:
         self.__storage = get_storage_service()
         self.__db_client = MongoDBClient()
         self.__llm = GeminiAPIDao()
+        self.__vector_db = MilvusDBClient()
 
     def start_listening(self) -> None:
         self.__channel.start_consuming()
@@ -136,7 +142,9 @@ If any of the tags are empty, then it means I do not have that information to gi
             if projectDetails is None:
                 raise ValueError(f"No project with id: '{message.project_id}' found!")
 
-            for file_info in projectDetails.get("fileProcessingStatus", {}).values():
+            for file_hash, file_info in projectDetails.get(
+                "fileProcessingStatus", {}
+            ).items():
                 file_processing_status = FileProcessingStatus(**file_info)
                 prompt = self.__generate_all_details_prompt(file_processing_status)
 
@@ -152,7 +160,16 @@ If any of the tags are empty, then it means I do not have that information to gi
 
                 model_result = self.__llm.prompt(message=prompt)
                 embedding = self.__llm.get_embeddings(message=model_result)
-                logging.info(f"key={file_key}, result={model_result}")
+
+                code_vector_document = CodeVectorDocument(
+                    vec_type=VectorType.FileSummary,
+                    project_id=message.project_id,
+                    file_hash=file_hash,
+                    vector=embedding,
+                )
+
+                self.__vector_db.upsert(code_vector_document=code_vector_document)
+                logging.info(f"Processed key={file_key}")
 
             logging.info(
                 f"Number of files in project = {len(projectDetails.get('fileProcessingStatus', {}))}"
@@ -171,7 +188,7 @@ if __name__ == "__main__":
         consumer.start_listening()
     except KeyboardInterrupt:
         logging.info("Shutting down project vectorizing consumer.")
-    except Exception as e:
-        logging.error("Error: {e}")
+    # except Exception as e:
+    #     logging.error(f"Error: {e}")
     finally:
         consumer.stop_listening()
