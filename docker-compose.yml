@@ -134,6 +134,8 @@ services:
         condition: service_started
       mongodb:
         condition: service_started
+      milvus:
+        condition: service_healthy
     environment:
       - MONGO_HOST=mongodb
       - MONGO_PORT=27017
@@ -145,6 +147,9 @@ services:
       - RABBIT_HOST=rabbitmq
       - RABBIT_PORT=5672
       - RABBIT_QUEUE=prompt-generation
+      - GEMINI_MODEL=gemini-1.5-flash
+      - GEMINI_EMBED_MODEL="models/embedding-001"
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     restart: on-failure
 
   ##########################################################
@@ -230,6 +235,29 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
+  milvus:
+    container_name: milvus-store
+    image: milvusdb/milvus:v2.4.5
+    environment:
+      - ETCD_USE_EMBED=true
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd
+      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
+      - COMMON_STORAGETYPE=local
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/infra-setup/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+      - "2379:2379"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    command: milvus run standalone
 
 volumes:
   postgres_data:

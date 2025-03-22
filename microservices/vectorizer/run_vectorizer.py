@@ -13,6 +13,7 @@ from file_vectorizer.utils.environment import (
 from file_vectorizer.utils.storage import StorageConfig, StorageService
 from file_vectorizer.utils.mongo_store import MongoCollections, MongoDBClient
 from file_vectorizer.utils.model import QueueMessage, FileProcessingStatus
+from file_vectorizer.utils.llm import GeminiAPIDao
 
 
 logging.basicConfig(
@@ -41,6 +42,7 @@ class ProjectVectorizingConsumer:
         self.__channel = self.__init_channel(queue_name=RABBIT_QUEUE)
         self.__storage = get_storage_service()
         self.__db_client = MongoDBClient()
+        self.__llm = GeminiAPIDao()
 
     def start_listening(self) -> None:
         self.__channel.start_consuming()
@@ -147,6 +149,10 @@ If any of the tags are empty, then it means I do not have that information to gi
                     file_content=prompt,
                     file_path=updated_file_key,
                 )
+
+                model_result = self.__llm.prompt(message=prompt)
+                embedding = self.__llm.get_embeddings(message=model_result)
+                logging.info(f"key={file_key}, result={model_result}")
 
             logging.info(
                 f"Number of files in project = {len(projectDetails.get('fileProcessingStatus', {}))}"
