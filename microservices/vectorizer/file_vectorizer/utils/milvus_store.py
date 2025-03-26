@@ -3,6 +3,7 @@ from pydantic import BaseModel, field_serializer
 from enum import Enum
 from typing import List
 import numpy as np
+import uuid
 
 from file_vectorizer.utils.environment import (
     MILVUS_HOST,
@@ -38,17 +39,31 @@ class CodeVectorDocument(BaseModel):
 class MilvusDBClient:
     def __init__(self):
         self.__client = MilvusClient(uri=MILVUS_HOST)
+        self.__id = 0
+
+        schema = self.__client.create_schema(enable_dynamic_field=True)
+        schema.add_field("id", DataType.INT64, is_primary=True)
+        schema.add_field("vector", DataType.FLOAT_VECTOR, dim=MILVUS_EMBEDDING_SIZE)
+        schema.add_field("vec_type", DataType.VARCHAR, max_length=64)
+        schema.add_field("file_hash", DataType.VARCHAR, max_length=128)
+        schema.add_field("project_id", DataType.VARCHAR, max_length=128)
 
         self.__client.create_collection(
             collection_name=MILVUS_COLLECTION,
             dimension=MILVUS_EMBEDDING_SIZE,
-            auto_id=True,
+            schema=schema,
+            consistency_level="Strong",
         )
 
-    def upsert(self, code_vector_document: CodeVectorDocument) -> None:
-        data_dict = code_vector_document.model_dump()
+    def __increment_id(self):
+        self.__id += 1
 
-        self.__client.upsert(
+    def insert(self, code_vector_document: CodeVectorDocument) -> None:
+        data_dict = code_vector_document.model_dump()
+        self.__increment_id()
+        data_dict["id"] = self.__id
+
+        self.__client.insert(
             collection_name=MILVUS_COLLECTION,
             data=[data_dict],
         )

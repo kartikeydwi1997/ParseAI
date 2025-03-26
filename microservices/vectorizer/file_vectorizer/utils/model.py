@@ -10,3 +10,10 @@ class FileProcessingStatus(BaseModel):
     docstringGeneration: str
     libraryDocGeneration: str
     rawCodeExtraction: str
+
+
+class FileContents(BaseModel):
+    docStringContent: str
+    libraryDocStringContent: str
+    rawCodeContent: str
+    prompt: str

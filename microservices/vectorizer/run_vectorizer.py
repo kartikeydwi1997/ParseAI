@@ -12,7 +12,7 @@ from file_vectorizer.utils.environment import (
 )
 from file_vectorizer.utils.storage import StorageConfig, StorageService
 from file_vectorizer.utils.mongo_store import MongoCollections, MongoDBClient
-from file_vectorizer.utils.model import QueueMessage, FileProcessingStatus
+from file_vectorizer.utils.model import QueueMessage, FileProcessingStatus, FileContents
 from file_vectorizer.utils.llm import GeminiAPIDao
 from file_vectorizer.utils.milvus_store import (
     MilvusDBClient,
@@ -91,7 +91,7 @@ class ProjectVectorizingConsumer:
 
     def __generate_all_details_prompt(
         self, file_processing_status: FileProcessingStatus
-    ) -> str:
+    ) -> FileContents:
         doc_string_file_contents = self.__get_file_contents(
             file_processing_status.docstringGeneration
         )
@@ -126,7 +126,12 @@ If any of the tags are empty, then it means I do not have that information to gi
 </LIBDSTRING>
         """
 
-        return prompt
+        return FileContents(
+            docStringContent=doc_string_file_contents,
+            rawCodeContent=raw_code_file_contents,
+            libraryDocStringContent=library_doc_string_file_contents,
+            prompt=prompt,
+        )
 
     def message_processor(self, ch, method, _properties, body):
         logging.info(body.decode())
@@ -146,7 +151,9 @@ If any of the tags are empty, then it means I do not have that information to gi
                 "fileProcessingStatus", {}
             ).items():
                 file_processing_status = FileProcessingStatus(**file_info)
-                prompt = self.__generate_all_details_prompt(file_processing_status)
+                file_contents = self.__generate_all_details_prompt(
+                    file_processing_status
+                )
 
                 file_key = file_processing_status.fileKey
                 file_name = os.path.basename(file_key).rsplit(".", 1)[0]
@@ -154,21 +161,37 @@ If any of the tags are empty, then it means I do not have that information to gi
                 updated_file_key = os.path.join(dirname, f"{file_name}_prompt.txt")
 
                 self.__storage.upload_file(
-                    file_content=prompt,
+                    file_content=file_contents.prompt,
                     file_path=updated_file_key,
                 )
 
-                model_result = self.__llm.prompt(message=prompt)
-                embedding = self.__llm.get_embeddings(message=model_result)
+                model_result = self.__llm.prompt(message=file_contents.prompt)
 
-                code_vector_document = CodeVectorDocument(
-                    vec_type=VectorType.FileSummary,
-                    project_id=message.project_id,
-                    file_hash=file_hash,
-                    vector=embedding,
+                content_tuple = (
+                    model_result,
+                    file_contents.docStringContent,
+                    file_contents.libraryDocStringContent,
+                    file_contents.rawCodeContent,
                 )
+                vec_types = (
+                    VectorType.FileSummary,
+                    VectorType.DocString,
+                    VectorType.LibraryDocString,
+                    VectorType.RawCode,
+                )
+                for content, vec_type in zip(content_tuple, vec_types):
+                    if content == "":
+                        continue
+                    embedding = self.__llm.get_embeddings(message=content)
+                    code_vector_document = CodeVectorDocument(
+                        vec_type=vec_type,
+                        project_id=message.project_id,
+                        file_hash=file_hash,
+                        vector=embedding,
+                    )
 
-                self.__vector_db.upsert(code_vector_document=code_vector_document)
+                    self.__vector_db.insert(code_vector_document=code_vector_document)
+
                 logging.info(f"Processed key={file_key}")
 
             logging.info(
