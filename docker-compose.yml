@@ -269,8 +269,8 @@ services:
     environment:
       - ETCD_USE_EMBED=true
       - ETCD_DATA_DIR=/var/lib/milvus/etcd
-      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
       - COMMON_STORAGETYPE=local
+      - MALLOC_ARENA_MAX=1
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
       - ${DOCKER_VOLUME_DIRECTORY:-.}/infra-setup/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
@@ -281,10 +281,15 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9091/healthz" ]
       interval: 30s
-      start_period: 90s
+      start_period: 120s
       timeout: 20s
       retries: 3
     command: milvus run standalone
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: on-failure
 
 volumes:
   postgres_data:

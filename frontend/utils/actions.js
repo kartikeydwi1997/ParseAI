@@ -212,3 +212,40 @@ export const uploadProject = async (formData) => {
     };
   }
 };
+
+export const queryProject = async (projectId, query) => {
+  console.log('Querying project:', projectId);
+  console.log('Query:', query);
+  
+  try {
+    const response = await fetch('http://localhost:8001/query/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        project_id: projectId,
+        query: query
+      }),
+    });
+    
+    const data = await response.json();
+    console.log('Query response:', data);
+    
+    if (!response.ok) {
+      throw new Error(data.detail || 'Query failed');
+    }
+    
+    return { 
+      success: true, 
+      data: data
+    };
+  } catch (error) {
+    console.error('Query error:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to process query'
+    };
+  }
+};
