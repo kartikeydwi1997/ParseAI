@@ -158,11 +158,11 @@ If any of the tags are empty, then it means I do not have that information to gi
                 file_key = file_processing_status.fileKey
                 file_name = os.path.basename(file_key).rsplit(".", 1)[0]
                 dirname = os.path.dirname(file_key)
-                updated_file_key = os.path.join(dirname, f"{file_name}_prompt.txt")
+                prompt_file_key = os.path.join(dirname, f"{file_name}_prompt.txt")
 
                 self.__storage.upload_file(
                     file_content=file_contents.prompt,
-                    file_path=updated_file_key,
+                    file_path=prompt_file_key,
                 )
 
                 model_result = self.__llm.prompt(message=file_contents.prompt)
@@ -192,7 +192,27 @@ If any of the tags are empty, then it means I do not have that information to gi
 
                     self.__vector_db.insert(code_vector_document=code_vector_document)
 
+                self.__db_client.update(
+                    collection_name=MongoCollections.FileProcessing.value,
+                    document={
+                        "$set": {
+                            f"fileProcessingStatus.{file_hash}.promptFile": prompt_file_key
+                        }
+                    },
+                    condition={"projectId": message.project_id},
+                )
+
                 logging.info(f"Processed key={file_key}")
+
+            self.__db_client.update(
+                collection_name=MongoCollections.FileProcessing.value,
+                document={
+                    "$set": {
+                        "vectorized": True,
+                    }
+                },
+                condition={"projectId": message.project_id},
+            )
 
             logging.info(
                 f"Number of files in project = {len(projectDetails.get('fileProcessingStatus', {}))}"

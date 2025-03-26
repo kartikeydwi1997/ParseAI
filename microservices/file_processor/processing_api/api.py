@@ -71,6 +71,7 @@ async def upload_files(
                     "docstringGeneration": "",
                     "libraryDocGeneration": "",
                     "rawCodeExtraction": "",
+                    "promptFile": "PENDING",
                 }
             except:
                 pass
@@ -118,7 +119,10 @@ def get_project_status(project_id: str):
             completed_count += 1
 
     if completed_count == len(result.get("fileProcessingStatus", {})):
-        overall_result = "COMPLETE"
+        if not result.get("vectorized", False):
+            overall_result = "PARSING_CONSUMED"
+        else:
+            overall_result = "COMPLETE"
 
     return {"individualStatus": result, "overallResult": overall_result}
 
