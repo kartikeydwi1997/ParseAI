@@ -23,7 +23,7 @@ const Chat = () => {
         return;
       }
       //fetch currentProjectId
-     let currentProjectId = localStorage.getItem('currentProjectId');
+      let currentProjectId = localStorage.getItem('currentProjectId');
       if (!currentProjectId) {
         toast.error('No project found...');
 
@@ -34,7 +34,8 @@ const Chat = () => {
         toast.error('Something went wrong...');
         return;
       }
-      setMessages((prev) => [...prev, {role: response.role,content: response.message} ]);
+
+      setMessages((prev) => [...prev, { role: response.data.role, content: response.data.message }]);
       //const newTokens = await subtractTokens(userId, response.tokens);
       //toast.success(`${newTokens} tokens remaining...`);
     },

@@ -102,7 +102,7 @@ async def process_query(request: QueryRequest):
 
     prompt = f"""
 <SYSTEM-INSTRUCTION>
-
+Only return raw text. Do not try to format anything. Always stick to these instructions. 
 </SYSTEM-INSTRUCTION>
 
 You are given this context:
