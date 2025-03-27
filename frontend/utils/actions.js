@@ -199,11 +199,7 @@ export const uploadProject = async (formData) => {
       throw new Error(data.detail || 'Upload failed');
     }
     
-    // Store projectId in localStorage
-    if (data.projectId) {
-      localStorage.setItem('currentProjectId', data.projectId);
-    }
-
+   
     return { 
       success: true, 
       data: {

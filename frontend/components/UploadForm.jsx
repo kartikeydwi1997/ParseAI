@@ -57,6 +57,11 @@ const UploadForm = () => {
     },
     onSuccess: (data) => {
       console.log('Project uploaded:', data); 
+       // Store projectId in localStorage
+    if (data.projectId) {
+      localStorage.setItem('currentProjectId', data.projectId);
+    }
+
       toast.success('Project uploaded successfully');
       setFile(null);
       // Reset the file input
