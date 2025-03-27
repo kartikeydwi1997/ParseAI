@@ -10,7 +10,26 @@ const UploadForm = () => {
     'application/zip',
     'application/x-tar',
     'application/gzip',
-    'application/x-gzip'
+    'application/x-gzip',
+    'application/x-compressed',
+    'application/x-gtar',
+    'application/x-tgz',
+    'application/tar+gzip',
+    'application/x-tar-gz',
+    'application/x-tar-gz-compressed',
+    'application/x-tar-gz-compressed',
+    'application/x-compress',
+    'application/x-compressed-tar',
+    'application/x-compressed-tar-gz',
+    'application/x-compressed-tar-gz-compressed',
+    'application/x-compressed-tar-gz-compressed',
+    'application/x-compress-tar',
+    'application/x-compress-tar-gz',
+    'application/x-compress-tar-gz-compressed',
+    'application/x-compress-tar-gz-compressed',
+    'application/x-compress-tar-gz-compressed',
+    'application/x-compress-tar-gz-compressed',
+    'application/x-compress-tar-gz-compressed'
   ];
 
   const handleFileChange = (e) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  generateChatResponse,
+  queryProject,
   fetchUserTokensById,
   subtractTokens,
 } from '@/utils/actions';
@@ -22,16 +22,22 @@ const Chat = () => {
         toast.error('Token balance too low....');
         return;
       }
+      //fetch currentProjectId
+     //let currentProjectId = localStorage.getItem('currentProjectId');
+      let currentProjectId='88f2bb65-71b6-4757-b35d-a6b2f8d5a7d3'
+      if (!currentProjectId) {
+        toast.error('No project found...');
 
-      const response = await generateChatResponse(messages);
-
+        return;
+      }
+      const response = await queryProject(currentProjectId, messages);
       if (!response) {
         toast.error('Something went wrong...');
         return;
       }
       setMessages((prev) => [...prev, response.message]);
-      const newTokens = await subtractTokens(userId, response.tokens);
-      toast.success(`${newTokens} tokens remaining...`);
+      //const newTokens = await subtractTokens(userId, response.tokens);
+      //toast.success(`${newTokens} tokens remaining...`);
     },
   });
   const handleSubmit = (e) => {

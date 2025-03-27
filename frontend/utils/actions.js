@@ -137,30 +137,32 @@ export const generateTourImage = async ({ city, country }) => {
 };
 
 export const fetchUserTokensById = async (clerkId) => {
-  const result = await prisma.token.findUnique({
-    where: {
-      clerkId,
-    },
-  });
-
-  return result?.tokens;
+  // const result = await prisma.token.findUnique({
+  //   where: {
+  //     clerkId,
+  //   },
+  // });
+return 1000;
+  //return result?.tokens;
 };
 
 export const generateUserTokensForId = async (clerkId) => {
-  const result = await prisma.token.create({
-    data: {
-      clerkId,
-    },
-  });
-  return result?.tokens;
+  // const result = await prisma.token.create({
+  //   data: {
+  //     clerkId,
+  //   },
+  // });
+  // return result?.tokens;
+  return 1000;
 };
 
 export const fetchOrGenerateTokens = async (clerkId) => {
-  const result = await fetchUserTokensById(clerkId);
-  if (result) {
-    return result.tokens;
-  }
-  return (await generateUserTokensForId(clerkId)).tokens;
+  // const result = await fetchUserTokensById(clerkId);
+  // if (result) {
+  //   return result.tokens;
+  // }
+  // return (await generateUserTokensForId(clerkId)).tokens;
+  return 1000;
 };
 
 export const subtractTokens = async (clerkId, tokens) => {
@@ -197,7 +199,11 @@ export const uploadProject = async (formData) => {
       throw new Error(data.detail || 'Upload failed');
     }
     
-    // FastAPI returns { projectId: string }
+    // Store projectId in localStorage
+    if (data.projectId) {
+      localStorage.setItem('currentProjectId', data.projectId);
+    }
+
     return { 
       success: true, 
       data: {
@@ -213,9 +219,9 @@ export const uploadProject = async (formData) => {
   }
 };
 
-export const queryProject = async (projectId, query) => {
+export const queryProject = async (projectId, messages) => {
   console.log('Querying project:', projectId);
-  console.log('Query:', query);
+  console.log('Messages:', messages);
   
   try {
     const response = await fetch('http://localhost:8001/query/', {
@@ -226,7 +232,7 @@ export const queryProject = async (projectId, query) => {
       },
       body: JSON.stringify({
         project_id: projectId,
-        query: query
+        messages: messages
       }),
     });
     
