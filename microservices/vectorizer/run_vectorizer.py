@@ -160,12 +160,11 @@ If any of the tags are empty, then it means I do not have that information to gi
                 dirname = os.path.dirname(file_key)
                 prompt_file_key = os.path.join(dirname, f"{file_name}_prompt.txt")
 
+                model_result = self.__llm.prompt(message=file_contents.prompt)
                 self.__storage.upload_file(
-                    file_content=file_contents.prompt,
+                    file_content=model_result,
                     file_path=prompt_file_key,
                 )
-
-                model_result = self.__llm.prompt(message=file_contents.prompt)
 
                 content_tuple = (
                     model_result,
