@@ -2,12 +2,19 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from enum import Enum
 from typing import List
+import logging
 
 from processing_api.utils.mongo_store import MongoDBClient, MongoCollections
 from processing_api.utils.milvus_store import MilvusDBClient, QueryDocument
 from processing_api.utils.llm import GeminiAPIDao
 from processing_api.utils.environment import get_env
 from processing_api.utils.storage import StorageConfig, StorageService
+
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 app = FastAPI()
 
@@ -80,6 +87,8 @@ async def process_query(request: QueryRequest):
         if file_key == "":
             continue
 
+        logging.info(f"Prompt file key = {file_key}")
+
         file_content = s3.get_file(key=file_key)["Body"].read()
         project_context.append(f"<CONTEXT>{file_content}</CONTEXT>")
     project_context_str = "\n".join(project_context)
@@ -92,6 +101,10 @@ async def process_query(request: QueryRequest):
     )
 
     prompt = f"""
+<SYSTEM-INSTRUCTION>
+
+</SYSTEM-INSTRUCTION>
+
 You are given this context:
 
 <CONVERSATION-CONTEXT>
@@ -107,7 +120,7 @@ And also some information from the project:
 
     model_output = llm.prompt(message=prompt)
 
-    return {"output": model_output, "context": prompt}
+    return {"message": model_output, "context": prompt, "role": Role.Assistant.value}
 
 
 @app.get("/health")
